@@ -1,0 +1,1308 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Coin Flip - Cara ou Coroa</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .coin {
+            transition: transform 1s ease-in;
+            transform-style: preserve-3d;
+        }
+        .coin.flipping {
+            animation: flip 1s ease-in forwards;
+        }
+        @keyframes flip {
+            0% { transform: rotateY(0deg); }
+            50% { transform: rotateY(900deg); }
+            100% { transform: rotateY(1800deg); }
+        }
+        .coin-face {
+            backface-visibility: hidden;
+            position: absolute;
+            width: 100%;
+            height: 100%;
+        }
+        .coin-back {
+            transform: rotateY(180deg);
+        }
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        .slide-up {
+            animation: slideUp 0.3s ease-out;
+        }
+        @keyframes slideUp {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-white min-h-screen">
+    <!-- Auth Modal -->
+    <div id="authModal" class="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50 hidden">
+        <div class="bg-gray-800 rounded-lg p-6 w-full max-w-md slide-up">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-2xl font-bold text-yellow-400">Entrar</h2>
+                <button id="closeAuthModal" class="text-gray-400 hover:text-white">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div id="authTabs" class="flex mb-6 border-b border-gray-700">
+                <button id="loginTab" class="px-4 py-2 font-medium text-yellow-400 border-b-2 border-yellow-400">Login</button>
+                <button id="registerTab" class="px-4 py-2 font-medium text-gray-400 hover:text-white">Registrar</button>
+            </div>
+            
+            <form id="loginForm" class="space-y-4">
+                <div>
+                    <label for="loginEmail" class="block text-sm font-medium mb-1">E-mail</label>
+                    <input type="email" id="loginEmail" class="w-full px-3 py-2 bg-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-yellow-400" required>
+                </div>
+                <div>
+                    <label for="loginPassword" class="block text-sm font-medium mb-1">Senha</label>
+                    <input type="password" id="loginPassword" class="w-full px-3 py-2 bg-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-yellow-400" required>
+                </div>
+                <button type="submit" class="w-full bg-yellow-500 hover:bg-yellow-600 text-black font-bold py-2 px-4 rounded transition">
+                    Entrar
+                </button>
+            </form>
+            
+            <form id="registerForm" class="space-y-4 hidden">
+                <div>
+                    <label for="registerName" class="block text-sm font-medium mb-1">Nome</label>
+                    <input type="text" id="registerName" class="w-full px-3 py-2 bg-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-yellow-400" required>
+                </div>
+                <div>
+                    <label for="registerEmail" class="block text-sm font-medium mb-1">E-mail</label>
+                    <input type="email" id="registerEmail" class="w-full px-3 py-2 bg-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-yellow-400" required>
+                </div>
+                <div>
+                    <label for="registerPassword" class="block text-sm font-medium mb-1">Senha</label>
+                    <input type="password" id="registerPassword" class="w-full px-3 py-2 bg-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-yellow-400" required>
+                </div>
+                <div>
+                    <label for="registerConfirmPassword" class="block text-sm font-medium mb-1">Confirmar Senha</label>
+                    <input type="password" id="registerConfirmPassword" class="w-full px-3 py-2 bg-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-yellow-400" required>
+                </div>
+                <button type="submit" class="w-full bg-yellow-500 hover:bg-yellow-600 text-black font-bold py-2 px-4 rounded transition">
+                    Registrar
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Deposit Modal -->
+    <div id="depositModal" class="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50 hidden">
+        <div class="bg-gray-800 rounded-lg p-6 w-full max-w-md slide-up">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-2xl font-bold text-yellow-400">Depositar</h2>
+                <button id="closeDepositModal" class="text-gray-400 hover:text-white">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="space-y-4">
+                <div>
+                    <label for="depositAmount" class="block text-sm font-medium mb-1">Valor (R$)</label>
+                    <input type="number" id="depositAmount" min="0.05" step="0.05" class="w-full px-3 py-2 bg-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-yellow-400" placeholder="Mínimo R$ 0,05" required>
+                </div>
+                
+                <div class="bg-gray-700 p-4 rounded-lg">
+                    <h3 class="font-medium mb-2">Pagar com Pix</h3>
+                    <div class="flex items-center justify-center mb-4">
+                        <div id="pixQrCode" class="w-48 h-48 bg-white p-2 rounded">
+                            <!-- QR Code would be generated here in a real app -->
+                            <div class="w-full h-full flex items-center justify-center text-gray-800">
+                                <div class="text-center">
+                                    <i class="fas fa-qrcode text-6xl mb-2"></i>
+                                    <p class="text-xs">QR Code Pix</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="text-center">
+                        <p class="text-sm mb-2">Ou copie o código abaixo:</p>
+                        <div class="flex items-center justify-center space-x-2">
+                            <input type="text" id="pixCode" value="00020126580014BR.GOV.BCB.PIX0136123e4567-e12b-12d1-a456-426655440000520400005303986540510.005802BR5925FULANO DE TAL6008BRASILIA62070503***6304E2A0" class="px-3 py-1 bg-gray-600 rounded text-xs flex-1" readonly>
+                            <button id="copyPixCode" class="bg-yellow-500 hover:bg-yellow-600 text-black px-3 py-1 rounded text-sm">
+                                <i class="fas fa-copy"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <button id="confirmDeposit" class="w-full bg-yellow-500 hover:bg-yellow-600 text-black font-bold py-2 px-4 rounded transition">
+                    Confirmar Depósito
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Withdraw Modal -->
+    <div id="withdrawModal" class="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50 hidden">
+        <div class="bg-gray-800 rounded-lg p-6 w-full max-w-md slide-up">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-2xl font-bold text-yellow-400">Sacar</h2>
+                <button id="closeWithdrawModal" class="text-gray-400 hover:text-white">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="space-y-4">
+                <div>
+                    <label for="withdrawAmount" class="block text-sm font-medium mb-1">Valor (R$)</label>
+                    <input type="number" id="withdrawAmount" min="10" step="10" class="w-full px-3 py-2 bg-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-yellow-400" placeholder="Mínimo R$ 10,00" required>
+                </div>
+                
+                <div>
+                    <label for="pixKey" class="block text-sm font-medium mb-1">Chave Pix</label>
+                    <select id="pixKeyType" class="w-full px-3 py-2 bg-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-yellow-400 mb-2">
+                        <option value="cpf">CPF</option>
+                        <option value="email">E-mail</option>
+                        <option value="phone">Telefone</option>
+                        <option value="random">Chave Aleatória</option>
+                    </select>
+                    <input type="text" id="pixKey" class="w-full px-3 py-2 bg-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-yellow-400" placeholder="Digite sua chave Pix" required>
+                </div>
+                
+                <button id="requestWithdraw" class="w-full bg-yellow-500 hover:bg-yellow-600 text-black font-bold py-2 px-4 rounded transition">
+                    Solicitar Saque
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Admin Panel Modal -->
+    <div id="adminPanel" class="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50 hidden">
+        <div class="bg-gray-800 rounded-lg p-6 w-full max-w-6xl max-h-[90vh] overflow-y-auto slide-up">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold text-yellow-400">Painel de Administração</h2>
+                <button id="closeAdminPanel" class="text-gray-400 hover:text-white">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                <div class="bg-gray-700 p-4 rounded-lg">
+                    <h3 class="font-medium mb-2">Total de Usuários</h3>
+                    <p class="text-3xl font-bold text-yellow-400">1,248</p>
+                </div>
+                <div class="bg-gray-700 p-4 rounded-lg">
+                    <h3 class="font-medium mb-2">Saldo Total</h3>
+                    <p class="text-3xl font-bold text-yellow-400">R$ 89,245.50</p>
+                </div>
+                <div class="bg-gray-700 p-4 rounded-lg">
+                    <h3 class="font-medium mb-2">Apostas Hoje</h3>
+                    <p class="text-3xl font-bold text-yellow-400">327</p>
+                </div>
+            </div>
+            
+            <div class="mb-6">
+                <h3 class="font-medium mb-2">Usuários Registrados</h3>
+                <div class="overflow-x-auto">
+                    <table class="w-full bg-gray-700 rounded-lg overflow-hidden">
+                        <thead>
+                            <tr class="bg-gray-600">
+                                <th class="px-4 py-2 text-left">Nome</th>
+                                <th class="px-4 py-2 text-left">E-mail</th>
+                                <th class="px-4 py-2 text-left">Saldo</th>
+                                <th class="px-4 py-2 text-left">Data Registro</th>
+                            </tr>
+                        </thead>
+                        <tbody id="registeredUsersTable">
+                            <!-- Users will be loaded here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="mb-6">
+                <h3 class="font-medium mb-2">Solicitações de Saque</h3>
+                <div class="overflow-x-auto">
+                    <table class="w-full bg-gray-700 rounded-lg overflow-hidden">
+                        <thead>
+                            <tr class="bg-gray-600">
+                                <th class="px-4 py-2 text-left">Usuário</th>
+                                <th class="px-4 py-2 text-left">Valor</th>
+                                <th class="px-4 py-2 text-left">Chave Pix</th>
+                                <th class="px-4 py-2 text-left">Data</th>
+                                <th class="px-4 py-2 text-left">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr class="border-b border-gray-600">
+                                <td class="px-4 py-2">user123@example.com</td>
+                                <td class="px-4 py-2">R$ 150,00</td>
+                                <td class="px-4 py-2">
+                                    <div class="flex items-center">
+                                        <span>123.456.789-00</span>
+                                        <button onclick="copyToClipboard('123.456.789-00')" class="ml-2 text-yellow-400 hover:text-yellow-300">
+                                            <i class="fas fa-copy"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                                <td class="px-4 py-2">10/06/2023</td>
+                                <td class="px-4 py-2">
+                                    <button onclick="handleWithdrawAction('user123@example.com', 150, this, 'approve')" class="bg-green-500 hover:bg-green-600 text-white px-2 py-1 rounded text-xs mr-1">
+                                        <i class="fas fa-check"></i> Aprovar
+                                    </button>
+                                    <button onclick="handleWithdrawAction('user123@example.com', 150, this, 'reject')" class="bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded text-xs">
+                                        <i class="fas fa-times"></i> Recusar
+                                    </button>
+                                </td>
+                            </tr>
+                            <tr class="border-b border-gray-600">
+                                <td class="px-4 py-2">player456@example.com</td>
+                                <td class="px-4 py-2">R$ 250,00</td>
+                                <td class="px-4 py-2">
+                                    <div class="flex items-center">
+                                        <span>player456@example.com</span>
+                                        <button onclick="copyToClipboard('player456@example.com')" class="ml-2 text-yellow-400 hover:text-yellow-300">
+                                            <i class="fas fa-copy"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                                <td class="px-4 py-2">09/06/2023</td>
+                                <td class="px-4 py-2">
+                                    <button onclick="handleWithdrawAction('player456@example.com', 250, this, 'approve')" class="bg-green-500 hover:bg-green-600 text-white px-2 py-1 rounded text-xs mr-1">
+                                        <i class="fas fa-check"></i> Aprovar
+                                    </button>
+                                    <button onclick="handleWithdrawAction('player456@example.com', 250, this, 'reject')" class="bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded text-xs">
+                                        <i class="fas fa-times"></i> Recusar
+                                    </button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <div class="mb-6">
+                <h3 class="font-medium mb-2">Controle do Jogo</h3>
+                <div class="bg-gray-700 p-4 rounded-lg grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Chance de Vitória (%)</label>
+                        <input type="number" id="winChance" min="1" max="99" value="50" class="w-full px-3 py-2 bg-gray-600 rounded focus:outline-none focus:ring-2 focus:ring-yellow-400">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Multiplicador</label>
+                        <input type="number" id="winMultiplier" min="1" max="10" step="0.1" value="2" class="w-full px-3 py-2 bg-gray-600 rounded focus:outline-none focus:ring-2 focus:ring-yellow-400">
+                    </div>
+                    <div class="flex items-end">
+                        <button id="saveGameSettings" class="w-full bg-yellow-500 hover:bg-yellow-600 text-black font-bold py-2 px-4 rounded transition">
+                            Salvar Configurações
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div>
+                <h3 class="font-medium mb-2">Últimas Apostas</h3>
+                <div class="overflow-x-auto">
+                    <table class="w-full bg-gray-700 rounded-lg overflow-hidden">
+                        <thead>
+                            <tr class="bg-gray-600">
+                                <th class="px-4 py-2 text-left">Usuário</th>
+                                <th class="px-4 py-2 text-left">Escolha</th>
+                                <th class="px-4 py-2 text-left">Valor</th>
+                                <th class="px-4 py-2 text-left">Resultado</th>
+                                <th class="px-4 py-2 text-left">Ganho</th>
+                                <th class="px-4 py-2 text-left">Data</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr class="border-b border-gray-600">
+                                <td class="px-4 py-2">user123@example.com</td>
+                                <td class="px-4 py-2">Cara</td>
+                                <td class="px-4 py-2">R$ 50,00</td>
+                                <td class="px-4 py-2">Coroa</td>
+                                <td class="px-4 py-2 text-red-500">-R$ 50,00</td>
+                                <td class="px-4 py-2">10/06/2023 15:30</td>
+                            </tr>
+                            <tr class="border-b border-gray-600">
+                                <td class="px-4 py-2">player456@example.com</td>
+                                <td class="px-4 py-2">Coroa</td>
+                                <td class="px-4 py-2">R$ 100,00</td>
+                                <td class="px-4 py-2">Coroa</td>
+                                <td class="px-4 py-2 text-green-500">+R$ 100,00</td>
+                                <td class="px-4 py-2">10/06/2023 14:15</td>
+                            </tr>
+                            <tr class="border-b border-gray-600">
+                                <td class="px-4 py-2">gambler789@example.com</td>
+                                <td class="px-4 py-2">Cara</td>
+                                <td class="px-4 py-2">R$ 75,00</td>
+                                <td class="px-4 py-2">Cara</td>
+                                <td class="px-4 py-2 text-green-500">+R$ 75,00</td>
+                                <td class="px-4 py-2">10/06/2023 12:45</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Game Result Modal -->
+    <div id="resultModal" class="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50 hidden">
+        <div class="bg-gray-800 rounded-lg p-6 w-full max-w-md text-center fade-in">
+            <div id="resultContent">
+                <!-- Content will be filled by JavaScript -->
+            </div>
+            <button id="closeResultModal" class="mt-6 bg-yellow-500 hover:bg-yellow-600 text-black font-bold py-2 px-6 rounded transition">
+                Fechar
+            </button>
+        </div>
+    </div>
+
+    <!-- Main Layout -->
+    <div class="container mx-auto px-4 py-6">
+        <header class="flex justify-between items-center mb-8">
+            <div class="flex items-center">
+                <div class="w-10 h-10 bg-yellow-500 rounded-full flex items-center justify-center mr-3">
+                    <i class="fas fa-coins text-black"></i>
+                </div>
+                <h1 class="text-2xl font-bold">Coin<span class="text-yellow-400">Flip</span></h1>
+            </div>
+            
+            <div class="flex items-center space-x-4">
+                <div id="userBalance" class="hidden bg-gray-800 px-4 py-2 rounded-full">
+                    <span class="text-yellow-400 font-medium">R$ 0,00</span>
+                </div>
+                <button id="authButton" class="bg-yellow-500 hover:bg-yellow-600 text-black font-bold py-2 px-4 rounded transition">
+                    Entrar
+                </button>
+                <button id="adminButton" class="hidden bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded transition">
+                    Admin
+                </button>
+            </div>
+        </header>
+        
+        <main class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Game Area -->
+            <div class="lg:col-span-2 bg-gray-800 rounded-xl p-6">
+                <h2 class="text-xl font-bold mb-6">Cara ou Coroa</h2>
+                
+                <div class="flex flex-col items-center">
+                    <div class="relative w-48 h-48 mb-8">
+                        <div id="coin" class="coin w-full h-full relative">
+                            <div class="coin-face front flex items-center justify-center bg-yellow-500 rounded-full">
+                                <img src="https://cdn-icons-png.flaticon.com/512/217/217853.png" alt="Cara" class="w-32 h-32">
+                            </div>
+                            <div class="coin-face back flex items-center justify-center bg-yellow-500 rounded-full">
+                                <img src="https://cdn-icons-png.flaticon.com/512/217/217853.png" alt="Coroa" class="w-32 h-32">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="w-full max-w-md">
+                        <div class="grid grid-cols-2 gap-4 mb-6">
+                            <button id="headsButton" class="choice-btn bg-gray-700 hover:bg-gray-600 py-3 rounded-lg font-medium transition flex items-center justify-center">
+                                <i class="fas fa-user mr-2"></i> Cara
+                            </button>
+                            <button id="tailsButton" class="choice-btn bg-gray-700 hover:bg-gray-600 py-3 rounded-lg font-medium transition flex items-center justify-center">
+                                <i class="fas fa-flag mr-2"></i> Coroa
+                            </button>
+                        </div>
+                        
+                        <div class="mb-6">
+                            <label for="betAmount" class="block text-sm font-medium mb-2">Valor da Aposta (R$)</label>
+                            <input type="number" id="betAmount" min="1" class="w-full px-4 py-3 bg-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400" placeholder="Digite o valor">
+                        </div>
+                        
+                        <button id="placeBetButton" class="w-full bg-yellow-500 hover:bg-yellow-600 text-black font-bold py-3 px-4 rounded-lg transition disabled:opacity-50" disabled>
+                            Apostar Agora
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- User Panel -->
+            <div class="bg-gray-800 rounded-xl p-6">
+                <h2 class="text-xl font-bold mb-6">Minha Conta</h2>
+                
+                <div id="userInfo" class="hidden space-y-6">
+                    <div class="flex items-center space-x-4">
+                        <div class="w-12 h-12 bg-gray-700 rounded-full flex items-center justify-center">
+                            <i class="fas fa-user text-xl"></i>
+                        </div>
+                        <div>
+                            <h3 id="userName" class="font-medium">Nome do Usuário</h3>
+                            <p id="userEmail" class="text-sm text-gray-400">user@example.com</p>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-gray-700 p-4 rounded-lg">
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="text-gray-400">Saldo Disponível</span>
+                            <button id="refreshBalance" class="text-yellow-400 hover:text-yellow-300">
+                                <i class="fas fa-sync-alt"></i>
+                            </button>
+                        </div>
+                        <p id="currentBalance" class="text-2xl font-bold text-yellow-400">R$ 0,00</p>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-4">
+                        <button id="depositButton" class="bg-green-600 hover:bg-green-700 py-2 px-4 rounded-lg transition flex items-center justify-center">
+                            <i class="fas fa-plus mr-2"></i> Depositar
+                        </button>
+                        <button id="withdrawButton" class="bg-blue-600 hover:bg-blue-700 py-2 px-4 rounded-lg transition flex items-center justify-center">
+                            <i class="fas fa-minus mr-2"></i> Sacar
+                        </button>
+                    </div>
+                    
+                    <div>
+                        <h3 class="font-medium mb-2">Histórico de Apostas</h3>
+                        <div class="bg-gray-700 rounded-lg overflow-hidden">
+                            <div class="max-h-64 overflow-y-auto">
+                                <table class="w-full">
+                                    <thead class="bg-gray-600">
+                                        <tr>
+                                            <th class="px-3 py-2 text-left text-sm">Escolha</th>
+                                            <th class="px-3 py-2 text-left text-sm">Valor</th>
+                                            <th class="px-3 py-2 text-left text-sm">Resultado</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="betHistory">
+                                        <!-- Bet history will be filled by JavaScript -->
+                                        <tr class="border-b border-gray-600">
+                                            <td colspan="3" class="px-3 py-4 text-center text-gray-400">Nenhuma aposta realizada</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <button id="logoutButton" class="w-full bg-red-600 hover:bg-red-700 py-2 px-4 rounded-lg transition">
+                        <i class="fas fa-sign-out-alt mr-2"></i> Sair
+                    </button>
+                </div>
+                
+                <div id="guestInfo" class="text-center py-8">
+                    <div class="w-20 h-20 bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i class="fas fa-user-slash text-3xl"></i>
+                    </div>
+                    <h3 class="text-lg font-medium mb-2">Você não está logado</h3>
+                    <p class="text-gray-400 mb-6">Faça login ou registre-se para começar a jogar</p>
+                    <button id="openAuthModal" class="bg-yellow-500 hover:bg-yellow-600 text-black font-bold py-2 px-6 rounded-lg transition">
+                        Entrar / Registrar
+                    </button>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // Game State
+        let currentUser = null;
+        let selectedChoice = null;
+        let balance = 0;
+        let betHistory = [];
+        
+        // DOM Elements
+        const authModal = document.getElementById('authModal');
+        const closeAuthModal = document.getElementById('closeAuthModal');
+        const openAuthModal = document.getElementById('openAuthModal');
+        const authButton = document.getElementById('authButton');
+        const loginTab = document.getElementById('loginTab');
+        const registerTab = document.getElementById('registerTab');
+        const loginForm = document.getElementById('loginForm');
+        const registerForm = document.getElementById('registerForm');
+        const userInfo = document.getElementById('userInfo');
+        const guestInfo = document.getElementById('guestInfo');
+        const userName = document.getElementById('userName');
+        const userEmail = document.getElementById('userEmail');
+        const currentBalance = document.getElementById('currentBalance');
+        const userBalance = document.getElementById('userBalance');
+        const logoutButton = document.getElementById('logoutButton');
+        const depositModal = document.getElementById('depositModal');
+        const closeDepositModal = document.getElementById('closeDepositModal');
+        const depositButton = document.getElementById('depositButton');
+        const withdrawModal = document.getElementById('withdrawModal');
+        const closeWithdrawModal = document.getElementById('closeWithdrawModal');
+        const withdrawButton = document.getElementById('withdrawButton');
+        const confirmDeposit = document.getElementById('confirmDeposit');
+        const requestWithdraw = document.getElementById('requestWithdraw');
+        const adminButton = document.getElementById('adminButton');
+        const adminPanel = document.getElementById('adminPanel');
+        const closeAdminPanel = document.getElementById('closeAdminPanel');
+        const headsButton = document.getElementById('headsButton');
+        const tailsButton = document.getElementById('tailsButton');
+        const betAmount = document.getElementById('betAmount');
+        const placeBetButton = document.getElementById('placeBetButton');
+        const coin = document.getElementById('coin');
+        const resultModal = document.getElementById('resultModal');
+        const resultContent = document.getElementById('resultContent');
+        const closeResultModal = document.getElementById('closeResultModal');
+        const betHistoryTable = document.getElementById('betHistory');
+        const refreshBalance = document.getElementById('refreshBalance');
+        
+        // Event Listeners
+        openAuthModal.addEventListener('click', () => {
+            authModal.classList.remove('hidden');
+            loginForm.classList.remove('hidden');
+            registerForm.classList.add('hidden');
+            loginTab.classList.add('border-yellow-400', 'text-yellow-400');
+            loginTab.classList.remove('text-gray-400');
+            registerTab.classList.add('text-gray-400');
+            registerTab.classList.remove('border-yellow-400', 'text-yellow-400');
+        });
+        
+        authButton.addEventListener('click', () => {
+            authModal.classList.remove('hidden');
+            loginForm.classList.remove('hidden');
+            registerForm.classList.add('hidden');
+            loginTab.classList.add('border-yellow-400', 'text-yellow-400');
+            loginTab.classList.remove('text-gray-400');
+            registerTab.classList.add('text-gray-400');
+            registerTab.classList.remove('border-yellow-400', 'text-yellow-400');
+        });
+        
+        closeAuthModal.addEventListener('click', () => {
+            authModal.classList.add('hidden');
+        });
+        
+        loginTab.addEventListener('click', () => {
+            loginForm.classList.remove('hidden');
+            registerForm.classList.add('hidden');
+            loginTab.classList.add('border-yellow-400', 'text-yellow-400');
+            loginTab.classList.remove('text-gray-400');
+            registerTab.classList.add('text-gray-400');
+            registerTab.classList.remove('border-yellow-400', 'text-yellow-400');
+        });
+        
+        registerTab.addEventListener('click', () => {
+            registerForm.classList.remove('hidden');
+            loginForm.classList.add('hidden');
+            registerTab.classList.add('border-yellow-400', 'text-yellow-400');
+            registerTab.classList.remove('text-gray-400');
+            loginTab.classList.add('text-gray-400');
+            loginTab.classList.remove('border-yellow-400', 'text-yellow-400');
+        });
+        
+        depositButton.addEventListener('click', () => {
+            depositModal.classList.remove('hidden');
+        });
+        
+        closeDepositModal.addEventListener('click', () => {
+            depositModal.classList.add('hidden');
+        });
+        
+        withdrawButton.addEventListener('click', () => {
+            withdrawModal.classList.remove('hidden');
+        });
+        
+        closeWithdrawModal.addEventListener('click', () => {
+            withdrawModal.classList.add('hidden');
+        });
+        
+        adminButton.addEventListener('click', () => {
+            adminPanel.classList.remove('hidden');
+            loadRegisteredUsers();
+        });
+        
+        closeAdminPanel.addEventListener('click', () => {
+            adminPanel.classList.add('hidden');
+        });
+        
+        headsButton.addEventListener('click', () => {
+            selectedChoice = 'heads';
+            headsButton.classList.add('bg-yellow-500', 'text-black');
+            headsButton.classList.remove('bg-gray-700', 'hover:bg-gray-600');
+            tailsButton.classList.remove('bg-yellow-500', 'text-black');
+            tailsButton.classList.add('bg-gray-700', 'hover:bg-gray-600');
+            checkBetReady();
+        });
+        
+        tailsButton.addEventListener('click', () => {
+            selectedChoice = 'tails';
+            tailsButton.classList.add('bg-yellow-500', 'text-black');
+            tailsButton.classList.remove('bg-gray-700', 'hover:bg-gray-600');
+            headsButton.classList.remove('bg-yellow-500', 'text-black');
+            headsButton.classList.add('bg-gray-700', 'hover:bg-gray-600');
+            checkBetReady();
+        });
+        
+        betAmount.addEventListener('input', checkBetReady);
+        
+        placeBetButton.addEventListener('click', placeBet);
+        
+        closeResultModal.addEventListener('click', () => {
+            resultModal.classList.add('hidden');
+        });
+        
+        logoutButton.addEventListener('click', logout);
+        
+        refreshBalance.addEventListener('click', () => {
+            // Simulate balance refresh
+            if (currentUser) {
+                if (currentUser.isAdmin) {
+                    balance = 1000;
+                } else {
+                    balance = 50;
+                }
+                updateBalanceDisplay();
+                alert('Saldo atualizado!');
+            }
+        });
+        
+        // Form Submissions
+        loginForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+            
+            // Simple validation
+            if (!email || !password) {
+                alert('Por favor, preencha todos os campos');
+                return;
+            }
+            
+            // In a real app, this would be an API call to your backend
+            login(email, password);
+        });
+        
+        registerForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const name = document.getElementById('registerName').value;
+            const email = document.getElementById('registerEmail').value;
+            const password = document.getElementById('registerPassword').value;
+            const confirmPassword = document.getElementById('registerConfirmPassword').value;
+            
+            // Simple validation
+            if (!name || !email || !password || !confirmPassword) {
+                alert('Por favor, preencha todos os campos');
+                return;
+            }
+            
+            if (password !== confirmPassword) {
+                alert('As senhas não coincidem');
+                return;
+            }
+            
+            // In a real app, this would be an API call to your backend
+            register(name, email, password);
+        });
+        
+        confirmDeposit.addEventListener('click', () => {
+            const amount = parseFloat(document.getElementById('depositAmount').value);
+            
+            if (isNaN(amount) || amount < 0.05) {
+                alert('O valor mínimo para depósito é R$ 0,05');
+                return;
+            }
+            
+            // In a real app, this would verify the payment was made
+            deposit(amount);
+        });
+        
+        requestWithdraw.addEventListener('click', () => {
+            const amount = parseFloat(document.getElementById('withdrawAmount').value);
+            const pixKey = document.getElementById('pixKey').value;
+            
+            if (isNaN(amount) || amount < 10) {
+                alert('O valor mínimo para saque é R$ 10,00');
+                return;
+            }
+            
+            if (!pixKey) {
+                alert('Por favor, informe sua chave Pix');
+                return;
+            }
+            
+            if (amount > balance) {
+                alert('Saldo insuficiente para este saque');
+                return;
+            }
+            
+            // In a real app, this would send a request to the admin
+            requestWithdrawal(amount, pixKey);
+        });
+        
+        // Functions
+        function checkBetReady() {
+            const amount = parseFloat(betAmount.value);
+            
+            if (selectedChoice && amount && amount > 0 && (!currentUser || amount <= balance)) {
+                placeBetButton.disabled = false;
+            } else {
+                placeBetButton.disabled = true;
+            }
+        }
+        
+        function placeBet() {
+            const amount = parseFloat(betAmount.value);
+            
+            if (!currentUser) {
+                alert('Você precisa estar logado para apostar');
+                return;
+            }
+            
+            if (amount > balance) {
+                alert('Saldo insuficiente');
+                return;
+            }
+            
+            // Disable buttons during bet
+            placeBetButton.disabled = true;
+            headsButton.disabled = true;
+            tailsButton.disabled = true;
+            
+            // Deduct bet amount from balance
+            balance -= amount;
+            updateBalanceDisplay();
+            
+            // Flip animation
+            coin.classList.add('flipping');
+            
+            // Determine result after animation
+            setTimeout(() => {
+                const result = Math.random() < 0.5 ? 'heads' : 'tails';
+                const win = result === selectedChoice;
+                const winAmount = win ? amount * 2 : 0;
+                
+                if (win) {
+                    balance += winAmount;
+                    updateBalanceDisplay();
+                }
+                
+                // Add to bet history
+                const bet = {
+                    choice: selectedChoice === 'heads' ? 'Cara' : 'Coroa',
+                    amount: amount,
+                    result: result === 'heads' ? 'Cara' : 'Coroa',
+                    win: win,
+                    winAmount: winAmount,
+                    date: new Date()
+                };
+                
+                betHistory.unshift(bet);
+                updateBetHistory();
+                
+                // Show result
+                showResult(win, amount, winAmount);
+                
+                // Reset for next bet
+                setTimeout(() => {
+                    coin.classList.remove('flipping');
+                    placeBetButton.disabled = false;
+                    headsButton.disabled = false;
+                    tailsButton.disabled = false;
+                }, 1000);
+            }, 1000);
+        }
+        
+        function showResult(win, betAmount, winAmount) {
+            resultContent.innerHTML = '';
+            
+            if (win) {
+                resultContent.innerHTML = `
+                    <div class="text-green-500 mb-4">
+                        <i class="fas fa-trophy text-6xl"></i>
+                    </div>
+                    <h3 class="text-2xl font-bold mb-2">Você ganhou!</h3>
+                    <p class="text-lg mb-4">+ R$ ${winAmount.toFixed(2)}</p>
+                    <p class="text-gray-300">Sua aposta: R$ ${betAmount.toFixed(2)}</p>
+                `;
+            } else {
+                resultContent.innerHTML = `
+                    <div class="text-red-500 mb-4">
+                        <i class="fas fa-times-circle text-6xl"></i>
+                    </div>
+                    <h3 class="text-2xl font-bold mb-2">Você perdeu</h3>
+                    <p class="text-lg mb-4">- R$ ${betAmount.toFixed(2)}</p>
+                    <p class="text-gray-300">Tente novamente!</p>
+                `;
+            }
+            
+            resultModal.classList.remove('hidden');
+        }
+        
+        // Store registered users and withdrawal requests in localStorage
+        function getRegisteredUsers() {
+            return JSON.parse(localStorage.getItem('registeredUsers')) || [];
+        }
+
+        function saveRegisteredUsers(users) {
+            localStorage.setItem('registeredUsers', JSON.stringify(users));
+        }
+
+        function getWithdrawalRequests() {
+            return JSON.parse(localStorage.getItem('withdrawalRequests')) || [];
+        }
+
+        function saveWithdrawalRequests(requests) {
+            localStorage.setItem('withdrawalRequests', JSON.stringify(requests));
+        }
+
+        function getUserWithdrawals(email) {
+            return JSON.parse(localStorage.getItem(`withdrawals_${email}`)) || [];
+        }
+
+        function saveUserWithdrawals(email, withdrawals) {
+            localStorage.setItem(`withdrawals_${email}`, JSON.stringify(withdrawals));
+        }
+
+        function login(email, password) {
+            // Check if admin
+            if ((email === 'admin@example.com' || email === 'adm777slot@gmail.com') && password === 'NN777Slot') {
+                currentUser = {
+                    name: 'Admin',
+                    email: email,
+                    isAdmin: true
+                };
+                
+                balance = 1000; // Higher balance for admin
+                updateUserDisplay();
+                authModal.classList.add('hidden');
+                document.getElementById('loginEmail').value = '';
+                document.getElementById('loginPassword').value = '';
+                return;
+            }
+
+            // Check if user is registered
+            const users = getRegisteredUsers();
+            const user = users.find(u => u.email === email);
+            
+            if (!user) {
+                alert('Usuário não cadastrado. Por favor, registre-se primeiro.');
+                registerTab.click(); // Switch to register tab
+                return;
+            }
+
+            // Verify password (simple check for demo)
+            if (user.password !== password) {
+                alert('Senha incorreta');
+                return;
+            }
+            currentUser = {
+                name: user.name,
+                email: user.email,
+                isAdmin: false
+            };
+            
+            balance = user.balance || 50;
+            updateUserDisplay();
+            authModal.classList.add('hidden');
+            
+            // Clear form
+            document.getElementById('loginEmail').value = '';
+            document.getElementById('loginPassword').value = '';
+        }
+        
+        function register(name, email, password) {
+            // Check if email is already registered
+            const users = getRegisteredUsers();
+            if (users.some(u => u.email === email)) {
+                alert('Este e-mail já está cadastrado. Por favor, faça login.');
+                loginTab.click(); // Switch to login tab
+                return;
+            }
+
+            // Create new user
+            const newUser = {
+                name: name,
+                email: email,
+                balance: 50, // Starting balance
+                password: password, // In real app, this would be hashed
+                registrationDate: new Date().toISOString()
+            };
+
+            // Save user
+            users.push(newUser);
+            saveRegisteredUsers(users);
+
+            // Login the new user
+            currentUser = {
+                name: name,
+                email: email,
+                isAdmin: false
+            };
+            
+            balance = 50;
+            updateUserDisplay();
+            authModal.classList.add('hidden');
+            
+            // Clear form
+            document.getElementById('registerName').value = '';
+            document.getElementById('registerEmail').value = '';
+            document.getElementById('registerPassword').value = '';
+            document.getElementById('registerConfirmPassword').value = '';
+        }
+        
+        function logout() {
+            currentUser = null;
+            balance = 0;
+            selectedChoice = null;
+            betAmount.value = '';
+            updateUserDisplay();
+            
+            // Reset choice buttons
+            headsButton.classList.remove('bg-yellow-500', 'text-black');
+            headsButton.classList.add('bg-gray-700', 'hover:bg-gray-600');
+            tailsButton.classList.remove('bg-yellow-500', 'text-black');
+            tailsButton.classList.add('bg-gray-700', 'hover:bg-gray-600');
+        }
+        
+        function deposit(amount) {
+            // In a real app, this would verify the payment was received
+            balance += amount;
+            updateBalanceDisplay();
+            depositModal.classList.add('hidden');
+            document.getElementById('depositAmount').value = '';
+            
+            // Show success message in a more elegant way
+            resultContent.innerHTML = `
+                <div class="text-green-500 mb-4">
+                    <i class="fas fa-check-circle text-6xl"></i>
+                </div>
+                <h3 class="text-2xl font-bold mb-2">Depósito realizado!</h3>
+                <p class="text-lg">+ R$ ${amount.toFixed(2)}</p>
+            `;
+            resultModal.classList.remove('hidden');
+        }
+        
+        function requestWithdrawal(amount, pixKey) {
+            if (amount > balance) {
+                alert('Saldo insuficiente para este saque');
+                return;
+            }
+            
+            // Create withdrawal request
+            const request = {
+                email: currentUser.email,
+                amount: amount,
+                pixKey: pixKey,
+                date: new Date().toISOString(),
+                status: 'pending'
+            };
+            
+            // Save to admin requests
+            const requests = getWithdrawalRequests();
+            requests.push(request);
+            saveWithdrawalRequests(requests);
+            
+            // Save to user's withdrawal history
+            const userWithdrawals = getUserWithdrawals(currentUser.email);
+            userWithdrawals.push(request);
+            saveUserWithdrawals(currentUser.email, userWithdrawals);
+            
+            // Deduct amount immediately (will be refunded if rejected)
+            balance -= amount;
+            updateBalanceDisplay();
+            withdrawModal.classList.add('hidden');
+            document.getElementById('withdrawAmount').value = '';
+            document.getElementById('pixKey').value = '';
+            
+            // Show success message
+            resultContent.innerHTML = `
+                <div class="text-blue-500 mb-4">
+                    <i class="fas fa-clock text-6xl"></i>
+                </div>
+                <h3 class="text-2xl font-bold mb-2">Saque solicitado!</h3>
+                <p class="text-lg">- R$ ${amount.toFixed(2)}</p>
+                <p class="text-gray-300 mt-2">Aguarde aprovação do administrador</p>
+            `;
+            resultModal.classList.remove('hidden');
+        }
+        
+        function updateUserDisplay() {
+            if (currentUser) {
+                // Show user info
+                userInfo.classList.remove('hidden');
+                guestInfo.classList.add('hidden');
+                authButton.classList.add('hidden');
+                userBalance.classList.remove('hidden');
+                
+                // Set user details
+                userName.textContent = currentUser.name;
+                userEmail.textContent = currentUser.email;
+                
+                // Update balance display
+                updateBalanceDisplay();
+                
+                // Show admin button if user is admin
+                if (currentUser.isAdmin) {
+                    adminButton.classList.remove('hidden');
+                } else {
+                    adminButton.classList.add('hidden');
+                }
+            } else {
+                // Show guest info
+                userInfo.classList.add('hidden');
+                guestInfo.classList.remove('hidden');
+                authButton.classList.remove('hidden');
+                userBalance.classList.add('hidden');
+                adminButton.classList.add('hidden');
+            }
+        }
+        
+        function updateBalanceDisplay() {
+            currentBalance.textContent = `R$ ${balance.toFixed(2)}`;
+            userBalance.innerHTML = `<span class="text-yellow-400 font-medium">R$ ${balance.toFixed(2)}</span>`;
+        }
+        
+        function updateBetHistory() {
+            betHistoryTable.innerHTML = '';
+            
+            if (betHistory.length === 0) {
+                betHistoryTable.innerHTML = `
+                    <tr class="border-b border-gray-600">
+                        <td colspan="3" class="px-3 py-4 text-center text-gray-400">Nenhuma aposta realizada</td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            // Show only the last 5 bets for demo
+            const recentBets = betHistory.slice(0, 5);
+            
+            recentBets.forEach(bet => {
+                const row = document.createElement('tr');
+                row.className = 'border-b border-gray-600';
+                
+                row.innerHTML = `
+                    <td class="px-3 py-2">${bet.choice}</td>
+                    <td class="px-3 py-2">R$ ${bet.amount.toFixed(2)}</td>
+                    <td class="px-3 py-2 ${bet.win ? 'text-green-500' : 'text-red-500'}">
+                        ${bet.result} ${bet.win ? `(+R$ ${bet.winAmount.toFixed(2)})` : ''}
+                    </td>
+                `;
+                
+                betHistoryTable.appendChild(row);
+            });
+        }
+        
+        // Copy Pix Code button
+        document.getElementById('copyPixCode').addEventListener('click', () => {
+            const pixCode = document.getElementById('pixCode');
+            pixCode.select();
+            document.execCommand('copy');
+            alert('Código Pix copiado!');
+        });
+
+        // Helper function to copy Pix key
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                alert(`Chave Pix copiada: ${text}`);
+            }).catch(err => {
+                console.error('Failed to copy: ', err);
+            });
+        }
+
+        // Admin functions
+
+        // Handle withdraw actions (approve/reject)
+        function handleWithdrawAction(email, amount, button, action) {
+            const requests = getWithdrawalRequests();
+            const requestIndex = requests.findIndex(r => 
+                r.email === email && 
+                r.amount === amount && 
+                r.status === 'pending'
+            );
+            
+            if (requestIndex !== -1) {
+                // Update request status
+                requests[requestIndex].status = action === 'approve' ? 'approved' : 'rejected';
+                requests[requestIndex].processedDate = new Date().toISOString();
+                saveWithdrawalRequests(requests);
+                
+                // Update UI
+                const row = button.closest('tr');
+                const buttons = row.querySelectorAll('button');
+                buttons.forEach(btn => btn.disabled = true);
+                
+                const statusCell = document.createElement('td');
+                statusCell.className = `px-4 py-2 text-${action === 'approve' ? 'green' : 'red'}-500`;
+                statusCell.textContent = action === 'approve' ? 'Aprovado' : 'Recusado';
+                row.appendChild(statusCell);
+                
+                // Remove action buttons
+                const actionsCell = button.closest('td');
+                actionsCell.remove();
+                
+                // Show toast notification
+                showToast(
+                    `Saque de R$ ${amount.toFixed(2)} para ${email} ${action === 'approve' ? 'aprovado' : 'recusado'}!`,
+                    action === 'approve' ? 'success' : 'error'
+                );
+                
+                // If rejected, refund the user (in a real app this would be done via API)
+                if (action === 'reject') {
+                    const users = getRegisteredUsers();
+                    const userIndex = users.findIndex(u => u.email === email);
+                    if (userIndex !== -1) {
+                        users[userIndex].balance = (users[userIndex].balance || 0) + amount;
+                        saveRegisteredUsers(users);
+                    }
+                }
+            }
+        }
+
+        // Helper function to show toast notifications
+        function showToast(message, type = 'success') {
+            const toast = document.createElement('div');
+            toast.className = `fixed bottom-4 right-4 px-4 py-2 rounded-md shadow-lg ${
+                type === 'success' ? 'bg-green-500' : 'bg-red-500'
+            } text-white`;
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'transition-opacity', 'duration-300');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        // Load and display registered users
+        function loadRegisteredUsers() {
+            const users = getRegisteredUsers();
+            const table = document.getElementById('registeredUsersTable');
+            table.innerHTML = '';
+
+            if (users.length === 0) {
+                table.innerHTML = `
+                    <tr class="border-b border-gray-600">
+                        <td colspan="4" class="px-4 py-4 text-center text-gray-400">Nenhum usuário registrado</td>
+                    </tr>
+                `;
+                return;
+            }
+
+            users.forEach(user => {
+                const row = document.createElement('tr');
+                row.className = 'border-b border-gray-600';
+                
+                row.innerHTML = `
+                    <td class="px-4 py-2">${user.name}</td>
+                    <td class="px-4 py-2">${user.email}</td>
+                    <td class="px-4 py-2">R$ ${(user.balance || 0).toFixed(2)}</td>
+                    <td class="px-4 py-2">${new Date(user.registrationDate || Date.now()).toLocaleDateString()}</td>
+                `;
+                
+                table.appendChild(row);
+            });
+        }
+
+        // Game settings
+        let winChance = 50; // 50% default
+        let winMultiplier = 2; // 2x default
+
+        // Load game settings
+        function loadGameSettings() {
+            const settings = JSON.parse(localStorage.getItem('gameSettings')) || {};
+            winChance = settings.winChance || 50;
+            winMultiplier = settings.winMultiplier || 2;
+            
+            document.getElementById('winChance').value = winChance;
+            document.getElementById('winMultiplier').value = winMultiplier;
+        }
+
+        // Save game settings
+        function saveGameSettings() {
+            const newWinChance = parseInt(document.getElementById('winChance').value);
+            const newMultiplier = parseFloat(document.getElementById('winMultiplier').value);
+            
+            if (newWinChance < 1 || newWinChance > 99) {
+                showToast('Chance de vitória deve estar entre 1% e 99%', 'error');
+                return;
+            }
+            
+            if (newMultiplier < 1 || newMultiplier > 10) {
+                showToast('Multiplicador deve estar entre 1x e 10x', 'error');
+                return;
+            }
+            
+            winChance = newWinChance;
+            winMultiplier = newMultiplier;
+            
+            localStorage.setItem('gameSettings', JSON.stringify({
+                winChance: winChance,
+                winMultiplier: winMultiplier
+            }));
+            
+            showToast('Configurações do jogo salvas com sucesso!', 'success');
+        }
+
+        // Event listener for save button
+        document.getElementById('saveGameSettings').addEventListener('click', saveGameSettings);
+
+        // Modify the placeBet function to use the configured settings
+        function placeBet() {
+            const amount = parseFloat(betAmount.value);
+            
+            if (!currentUser) {
+                alert('Você precisa estar logado para apostar');
+                return;
+            }
+            
+            if (amount > balance) {
+                alert('Saldo insuficiente');
+                return;
+            }
+            
+            // Disable buttons during bet
+            placeBetButton.disabled = true;
+            headsButton.disabled = true;
+            tailsButton.disabled = true;
+            
+            // Deduct bet amount from balance
+            balance -= amount;
+            updateBalanceDisplay();
+            
+            // Flip animation
+            coin.classList.add('flipping');
+            
+            // Determine result after animation using configured win chance
+            setTimeout(() => {
+                const result = Math.random() * 100 < winChance ? selectedChoice : 
+                              (selectedChoice === 'heads' ? 'tails' : 'heads');
+                const win = result === selectedChoice;
+                const winAmount = win ? amount * winMultiplier : 0;
+                
+                if (win) {
+                    balance += winAmount;
+                    updateBalanceDisplay();
+                }
+                
+                // Add to bet history
+                const bet = {
+                    choice: selectedChoice === 'heads' ? 'Cara' : 'Coroa',
+                    amount: amount,
+                    result: result === 'heads' ? 'Cara' : 'Coroa',
+                    win: win,
+                    winAmount: winAmount,
+                    date: new Date()
+                };
+                
+                betHistory.unshift(bet);
+                updateBetHistory();
+                
+                // Show result
+                showResult(win, amount, winAmount);
+                
+                // Reset for next bet
+                setTimeout(() => {
+                    coin.classList.remove('flipping');
+                    placeBetButton.disabled = false;
+                    headsButton.disabled = false;
+                    tailsButton.disabled = false;
+                }, 1000);
+            }, 1000);
+        }
+
+        // Initialize
+        updateUserDisplay();
+        updateBetHistory();
+        loadRegisteredUsers();
+        loadGameSettings();
+    </script>
+</body>
+</html>
