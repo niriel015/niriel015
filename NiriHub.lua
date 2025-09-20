@@ -97,4 +97,82 @@ end
 -- Ativa automaticamente com o nome do jogador
 createNameBill(LocalPlayer.Name)
 
--- Continua na Parte 2...
+-- Barra superior
+local topBar = Instance.new("Frame", root)
+topBar.Size = UDim2.new(1,0,0,36)
+topBar.BackgroundColor3 = Color3.fromRGB(18,18,20)
+topBar.BackgroundTransparency = 0.5
+Instance.new("UICorner", topBar).CornerRadius = UDim.new(0,12)
+
+local title = Instance.new("TextLabel", topBar)
+title.Size = UDim2.new(1,-40,1,0)
+title.Position = UDim2.new(0,10,0,0)
+title.BackgroundTransparency = 1
+title.Text = "Niri Hub ⚡"
+title.Font = Enum.Font.GothamBold
+title.TextSize = 16
+title.TextColor3 = Color3.fromRGB(255,255,255)
+title.TextXAlignment = Enum.TextXAlignment.Left
+
+-- Botão de fechar
+local closeBtn = Instance.new("TextButton", topBar)
+closeBtn.Size = UDim2.new(0,30,0,30)
+closeBtn.Position = UDim2.new(1,-34,0,3)
+closeBtn.Text = "X"
+closeBtn.TextColor3 = Color3.fromRGB(255,80,80)
+closeBtn.BackgroundTransparency = 1
+keepConn(closeBtn.MouseButton1Click:Connect(function()
+    screenGui:Destroy()
+    if _G.NiriHub then
+        if type(_G.NiriHub.cleanup) == "function" then _G.NiriHub.cleanup() end
+        _G.NiriHub = nil
+    end
+end))
+
+-- (resto do script com menus, botões, sliders...)
+
+-- Finalização do slider de tamanho (corrigido)
+local dragging, dragConn, upConn = false, nil, nil
+local sliderFrame = Instance.new("Frame", root)
+sliderFrame.Size = UDim2.new(0,200,0,20)
+sliderFrame.Position = UDim2.new(0,20,1,-40)
+sliderFrame.BackgroundColor3 = Color3.fromRGB(40,40,45)
+sliderFrame.BackgroundTransparency = 0.5
+Instance.new("UICorner", sliderFrame).CornerRadius = UDim.new(0,8)
+
+local knob = Instance.new("Frame", sliderFrame)
+knob.Size = UDim2.new(0,20,1,0)
+knob.BackgroundColor3 = Color3.fromRGB(100,255,100)
+Instance.new("UICorner", knob).CornerRadius = UDim.new(1,0)
+
+local uis = game:GetService("UserInputService")
+local function updateKnob(x)
+    local rel = math.clamp((x - sliderFrame.AbsolutePosition.X) / sliderFrame.AbsoluteSize.X, 0, 1)
+    knob.Position = UDim2.new(rel, -10, 0, 0)
+    root.Size = UDim2.new(0, 720 + (200*rel), 0, 400 + (160*rel))
+end
+
+knob.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = true
+    end
+end)
+
+uis.InputChanged:Connect(function(input)
+    if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+        updateKnob(input.Position.X)
+    end
+end)
+
+uis.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = false
+    end
+end)
+
+-- Função de limpeza
+_G.NiriHub.cleanup = function()
+    for _,c in ipairs(holder.conns) do pcall(function() c:Disconnect() end) end
+    holder.conns = {}
+    pcall(function() screenGui:Destroy() end)
+end
