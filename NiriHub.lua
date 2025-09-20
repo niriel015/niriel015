@@ -1,4 +1,4 @@
--- Niri Hub ⚡ Ultimate — Versão FINAL com slider de escala e puxar jogador concluído
+-- Niri Hub ⚡ Ultimate — Versão FINAL com slider de escala, puxar jogador e controles de transparência
 -- Cole inteiro no executor (Delta). Tudo client-side; algumas ações podem falhar em servidores protegidos.
 
 -- ===== SERVICES & UTIL =====
@@ -45,6 +45,10 @@ local function findPlayerByName(query)
     return nil
 end
 
+-- Transparency defaults (you can change these; UI added to switch)
+local nameBgTransparency = 0.5  -- default background transparency for the name (0 = opaque, 1 = fully transparent)
+local panelTransparency = 0     -- default panel transparency (0 = opaque)
+
 -- ===== MAIN GUI =====
 local screenGui = Instance.new("ScreenGui", PlayerGui)
 screenGui.Name = "NiriHub"
@@ -84,6 +88,33 @@ expandBtn.Size = UDim2.new(0,36,0,36); expandBtn.Position = UDim2.new(1, -108, 0
 expandBtn.Text = "🔼"; expandBtn.Font = Enum.Font.GothamBold; expandBtn.TextSize = 20
 expandBtn.BackgroundColor3 = Color3.fromRGB(90,44,150); expandBtn.TextColor3 = Color3.fromRGB(255,255,255)
 local expc = Instance.new("UICorner", expandBtn); expc.CornerRadius = UDim.new(0,8)
+
+-- Panel transparency buttons (50% / 100%)
+local panel50Btn = Instance.new("TextButton", topBar)
+panel50Btn.Size = UDim2.new(0,44,0,28); panel50Btn.Position = UDim2.new(1, -160, 0, 16)
+panel50Btn.Text = "50%"; panel50Btn.Font = Enum.Font.Gotham; panel50Btn.TextSize = 14
+panel50Btn.BackgroundColor3 = Color3.fromRGB(80,80,80); panel50Btn.TextColor3 = Color3.fromRGB(255,255,255)
+local p50c = Instance.new("UICorner", panel50Btn); p50c.CornerRadius = UDim.new(0,6)
+
+local panel100Btn = Instance.new("TextButton", topBar)
+panel100Btn.Size = UDim2.new(0,44,0,28); panel100Btn.Position = UDim2.new(1, -210, 0, 16)
+panel100Btn.Text = "100%"; panel100Btn.Font = Enum.Font.Gotham; panel100Btn.TextSize = 14
+panel100Btn.BackgroundColor3 = Color3.fromRGB(80,80,80); panel100Btn.TextColor3 = Color3.fromRGB(255,255,255)
+local p100c = Instance.new("UICorner", panel100Btn); p100c.CornerRadius = UDim.new(0,6)
+
+local function applyPanelTransparency(v)
+    panelTransparency = clamp(v, 0, 1)
+    -- apply to main containers that have visible backgrounds
+    if root then pcall(function() root.BackgroundTransparency = panelTransparency end) end
+    if topBar then pcall(function() topBar.BackgroundTransparency = panelTransparency end) end
+    if menu then pcall(function() menu.BackgroundTransparency = panelTransparency end) end
+    if content then pcall(function() content.BackgroundTransparency = panelTransparency end) end
+    -- adjust stroke visibility a bit (optional)
+    if rstroke then pcall(function() rstroke.Transparency = clamp(0.7 + panelTransparency*0.3, 0, 1) end) end
+end
+
+panel50Btn.MouseButton1Click:Connect(function() applyPanelTransparency(0.5) end)
+panel100Btn.MouseButton1Click:Connect(function() applyPanelTransparency(1.0) end)
 
 -- scale slider container (top bar, right side)
 local scaleContainer = Instance.new("Frame", topBar)
@@ -267,7 +298,10 @@ do
         billboard.Size = UDim2.new(0,220,0,52)
         billboard.StudsOffset = Vector3.new(0,3.2,0)
         billboard.AlwaysOnTop = true
-        local f = Instance.new("Frame", billboard); f.Size = UDim2.new(1,0,1,0); f.BackgroundColor3 = Color3.fromRGB(255,255,255); local fc = Instance.new("UICorner", f); fc.CornerRadius = UDim.new(0,12)
+        local f = Instance.new("Frame", billboard); f.Size = UDim2.new(1,0,1,0);
+        f.BackgroundColor3 = Color3.fromRGB(255,255,255);
+        f.BackgroundTransparency = nameBgTransparency; -- use controlled transparency
+        local fc = Instance.new("UICorner", f); fc.CornerRadius = UDim.new(0,12)
         local stroke = Instance.new("UIStroke", f); stroke.Thickness = 3; stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
         local lbl = Instance.new("TextLabel", f); lbl.Size = UDim2.new(1,-10,1,0); lbl.Position = UDim2.new(0,5,0,0); lbl.BackgroundTransparency = 1; lbl.Font = Enum.Font.GothamBold; lbl.TextSize = 18; lbl.Text = tostring(texto); lbl.TextColor3 = Color3.fromRGB(18,18,18)
         currConn = RunService.RenderStepped:Connect(function()
@@ -292,6 +326,44 @@ do
         local txt = (nameInput.Text ~= "" and nameInput.Text) or "DONO"
         createNameBox(txt)
         nameToggle.Text = "Desativar Nome RGB"; nameToggle.BackgroundColor3 = Color3.fromRGB(160,60,60)
+    end)
+
+    -- ===== Controls for name BG transparency (0%, 50%, 100%) =====
+    local nameTransLabel = Instance.new("TextLabel", page)
+    nameTransLabel.Size = UDim2.new(0,80,0,20); nameTransLabel.Position = UDim2.new(0,12,0,204)
+    nameTransLabel.BackgroundTransparency = 1; nameTransLabel.Font = Enum.Font.Gotham; nameTransLabel.TextSize = 14; nameTransLabel.TextColor3 = Color3.fromRGB(220,220,220)
+    nameTransLabel.Text = "BG Nome:"
+
+    local nameBg0Btn = Instance.new("TextButton", page)
+    nameBg0Btn.Size = UDim2.new(0,80,0,28); nameBg0Btn.Position = UDim2.new(0,100,0,200)
+    nameBg0Btn.Text = "0%"; nameBg0Btn.Font = Enum.Font.Gotham; nameBg0Btn.TextSize = 14; nameBg0Btn.BackgroundColor3 = Color3.fromRGB(70,70,70); nameBg0Btn.TextColor3 = Color3.fromRGB(255,255,255)
+    local nameBg50Btn = Instance.new("TextButton", page)
+    nameBg50Btn.Size = UDim2.new(0,80,0,28); nameBg50Btn.Position = UDim2.new(0,188,0,200)
+    nameBg50Btn.Text = "50%"; nameBg50Btn.Font = Enum.Font.Gotham; nameBg50Btn.TextSize = 14; nameBg50Btn.BackgroundColor3 = Color3.fromRGB(70,70,70); nameBg50Btn.TextColor3 = Color3.fromRGB(255,255,255)
+    local nameBg100Btn = Instance.new("TextButton", page)
+    nameBg100Btn.Size = UDim2.new(0,80,0,28); nameBg100Btn.Position = UDim2.new(0,276,0,200)
+    nameBg100Btn.Text = "100%"; nameBg100Btn.Font = Enum.Font.Gotham; nameBg100Btn.TextSize = 14; nameBg100Btn.BackgroundColor3 = Color3.fromRGB(70,70,70); nameBg100Btn.TextColor3 = Color3.fromRGB(255,255,255)
+
+    local function updateCurrentBillboardTransparency()
+        if currBillboard and currBillboard:IsDescendantOf(game) then
+            local f = currBillboard:FindFirstChildWhichIsA("Frame")
+            if f then
+                pcall(function() f.BackgroundTransparency = nameBgTransparency end)
+            end
+        end
+    end
+
+    nameBg0Btn.MouseButton1Click:Connect(function()
+        nameBgTransparency = 0
+        updateCurrentBillboardTransparency()
+    end)
+    nameBg50Btn.MouseButton1Click:Connect(function()
+        nameBgTransparency = 0.5
+        updateCurrentBillboardTransparency()
+    end)
+    nameBg100Btn.MouseButton1Click:Connect(function()
+        nameBgTransparency = 1
+        updateCurrentBillboardTransparency()
     end)
 
     keepConn(LocalPlayer.CharacterAdded:Connect(function()
@@ -739,7 +811,11 @@ local sliderMaxScale = 1.5 -- 150% of original
 local sliderWidth = sliderBar.AbsoluteSize.X
 
 local function applyScaleFromThumb()
-    local rel = thumb.Position.X.Offset / (sliderBar.AbsoluteSize.X - thumb.AbsoluteSize.X)
+    local rel = 0
+    local denom = (sliderBar.AbsoluteSize.X - thumb.AbsoluteSize.X)
+    if denom ~= 0 then
+        rel = thumb.Position.X.Offset / denom
+    end
     rel = clamp(rel, 0, 1)
     local scale = sliderMinScale + (sliderMaxScale - sliderMinScale) * rel
     -- apply scale with tween (smooth)
@@ -796,4 +872,7 @@ end)
 _G.NiriHub.root = root
 _G.NiriHub.gui = screenGui
 
-print("Niri Hub ⚡ Ultimate (com slider e puxar corrigido) carregado. Lembre-se: muitas ações são client-side e podem não funcionar em servidores protegidos.")
+-- apply initial panel transparency (default)
+applyPanelTransparency(panelTransparency)
+
+print("Niri Hub ⚡ Ultimate (com slider, puxar e controles de transparência) carregado. Lembre-se: muitas ações são client-side e podem não funcionar em servidores protegidos.")
