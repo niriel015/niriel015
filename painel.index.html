@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulado Inteligente — Seu Site</title>
+    <style id="theme-style">
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f7fa;
+            color: #333;
+            padding: 20px;
+            margin: 0;
+            transition: all 0.4s ease;
+        }
+        .night {
+            background: #1a1a1a !important;
+            color: #f0f0f0 !important;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            transition: all 0.4s;
+        }
+        .night .container {
+            background: #2a2a2a;
+            color: #e0e0e0;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #2c3e50;
+        }
+        .night h1 { color: #ecf0f1; }
+        .controls {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+        .btn {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 14px;
+        }
+        .btn-auto { background: #27ae60; color: white; }
+        .btn-night { background: #34495e; color: white; }
+        .btn-accuracy { background: #e67e22; color: white; }
+        .btn:hover { filter: brightness(0.9); transform: translateY(-2px); }
+        .question-box {
+            padding: 25px;
+            margin: 20px 0;
+            border-radius: 10px;
+            background: #f8f9fa;
+            border-left: 5px solid #3498db;
+        }
+        .night .question-box {
+            background: #3a3a3a;
+            border-left-color: #3498db;
+        }
+        .options label {
+            display: block;
+            padding: 10px;
+            margin: 8px 0;
+            background: #e9ecef;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .night .options label { background: #444; }
+        .options input[type="radio"] { margin-right: 10px; }
+        .feedback {
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 6px;
+            font-weight: bold;
+        }
+        .correct { background: #d4edda; color: #155724; }
+        .wrong { background: #f8d7da; color: #721c24; }
+        .night .correct { background: #1e3d2b; color: #d4edda; }
+        .night .wrong { background: #4a2326; color: #f8d7da; }
+        .next-btn {
+            display: block;
+            width: 100%;
+            padding: 14px;
+            background: #3498db;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+        .night .next-btn { background: #2980b9; }
+        .result {
+            text-align: center;
+            font-size: 24px;
+            font-weight: bold;
+            margin: 30px 0;
+            color: #27ae60;
+        }
+        .night .result { color: #2ecc71; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎯 Simulado Inteligente — Funciona de Verdade!</h1>
+
+        <div class="controls">
+            <button class="btn btn-auto" id="toggleAuto">▶️ Responder Automaticamente</button>
+            <button class="btn btn-night" id="toggleNight">🌙 Modo Noturno</button>
+            <button class="btn btn-accuracy" id="toggleAccuracy">💯 Acerto: 100%</button>
+        </div>
+
+        <div id="quiz-area">
+            <!-- As questões aparecerão aqui -->
+        </div>
+    </div>
+
+    <script>
+        // CONFIGURAÇÕES
+        let autoMode = false;
+        let nightMode = false;
+        let accuracy = 100; // 100% ou 60%
+        let currentQuestionIndex = 0;
+        let score = 0;
+
+        // BANCO DE QUESTÕES — VOCÊ PODE EDITAR!
+        const questions = [
+            {
+                question: "Qual é a capital da França?",
+                options: ["Londres", "Paris", "Berlim", "Roma"],
+                correct: 1
+            },
+            {
+                question: "Quanto é 2 + 2?",
+                options: ["3", "4", "5", "6"],
+                correct: 1
+            },
+            {
+                question: "Qual gás é mais abundante na atmosfera terrestre?",
+                options: ["Oxigênio", "Hidrogênio", "Nitrogênio", "Dióxido de Carbono"],
+                correct: 2
+            },
+            {
+                question: "Quem escreveu 'Dom Casmurro'?",
+                options: ["Machado de Assis", "José de Alencar", "Graciliano Ramos", "Clarice Lispector"],
+                correct: 0
+            },
+            {
+                question: "Qual é o maior planeta do sistema solar?",
+                options: ["Terra", "Saturno", "Júpiter", "Netuno"],
+                correct: 2
+            }
+        ];
+
+        // RENDERIZA A QUESTÃO ATUAL
+        function loadQuestion(index) {
+            const quizArea = document.getElementById('quiz-area');
+            if (index >= questions.length) {
+                showResult();
+                return;
+            }
+
+            const q = questions[index];
+            let optionsHtml = '';
+            q.options.forEach((opt, i) => {
+                optionsHtml += `
+                    <div>
+                        <label>
+                            <input type="radio" name="answer" value="${i}" id="opt${i}">
+                            ${opt}
+                        </label>
+                    </div>`;
+            });
+
+            quizArea.innerHTML = `
+                <div class="question-box">
+                    <h3>Questão ${index + 1} de ${questions.length}</h3>
+                    <p><strong>${q.question}</strong></p>
+                    <div class="options">${optionsHtml}</div>
+                    <div id="feedback"></div>
+                    <button class="next-btn" onclick="nextQuestion()">Próxima ➜</button>
+                </div>`;
+
+            // Se estiver no modo automático, responde sozinho
+            if (autoMode) {
+                setTimeout(() => {
+                    autoAnswer();
+                }, 800);
+            }
+        }
+
+        // RESPOSTA AUTOMÁTICA
+        function autoAnswer() {
+            const q = questions[currentQuestionIndex];
+            let selectedOption = q.correct;
+
+            // Se for 60%, há 40% de chance de errar
+            if (accuracy === 60 && Math.random() > 0.6) {
+                const wrongs = [];
+                for (let i = 0; i < q.options.length; i++) {
+                    if (i !== q.correct) wrongs.push(i);
+                }
+                selectedOption = wrongs[Math.floor(Math.random() * wrongs.length)];
+            }
+
+            // Marca a opção
+            const radio = document.querySelector(`input[value="${selectedOption}"]`);
+            if (radio) radio.checked = true;
+
+            // Mostra feedback
+            showFeedback(selectedOption === q.correct, q.correct);
+        }
+
+        // MOSTRA FEEDBACK (CERTO/ERRADO)
+        function showFeedback(isCorrect, correctIndex) {
+            const feedbackDiv = document.getElementById('feedback');
+            const labels = document.querySelectorAll('label');
+            labels.forEach((label, i) => {
+                label.style.color = '';
+                label.classList.remove('correct', 'wrong');
+            });
+
+            if (isCorrect) {
+                feedbackDiv.innerHTML = `<div class="feedback correct">✅ Correto!</div>`;
+                score++;
+            } else {
+                feedbackDiv.innerHTML = `<div class="feedback wrong">❌ Errado. A correta era: ${questions[currentQuestionIndex].options[correctIndex]}</div>`;
+            }
+
+            // Se estiver no modo automático, avança sozinho após 1.5s
+            if (autoMode) {
+                setTimeout(() => {
+                    nextQuestion();
+                }, 1500);
+            }
+        }
+
+        // PRÓXIMA QUESTÃO
+        function nextQuestion() {
+            currentQuestionIndex++;
+            loadQuestion(currentQuestionIndex);
+        }
+
+        // MOSTRA RESULTADO FINAL
+        function showResult() {
+            const quizArea = document.getElementById('quiz-area');
+            const percentage = Math.round((score / questions.length) * 100);
+            quizArea.innerHTML = `
+                <div class="result">
+                    🎓 Simulado Concluído!<br><br>
+                    ✅ Acertos: ${score} de ${questions.length}<br>
+                    📊 Porcentagem: ${percentage}%<br><br>
+                    <button class="btn btn-auto" onclick="restartQuiz()">🔁 Refazer Simulado</button>
+                </div>`;
+        }
+
+        // REINICIAR
+        function restartQuiz() {
+            currentQuestionIndex = 0;
+            score = 0;
+            loadQuestion(0);
+        }
+
+        // EVENTOS DOS BOTÕES
+        document.getElementById('toggleAuto').addEventListener('click', function() {
+            autoMode = !autoMode;
+            this.textContent = autoMode ? "⏸️ Desativar Respostas" : "▶️ Responder Automaticamente";
+        });
+
+        document.getElementById('toggleNight').addEventListener('click', function() {
+            nightMode = !nightMode;
+            document.body.classList.toggle('night');
+            this.textContent = nightMode ? "☀️ Modo Claro" : "🌙 Modo Noturno";
+        });
+
+        document.getElementById('toggleAccuracy').addEventListener('click', function() {
+            accuracy = accuracy === 100 ? 60 : 100;
+            this.textContent = `🎯 Acerto: ${accuracy}%`;
+        });
+
+        // INICIA O SIMULADO
+        loadQuestion(0);
+    </script>
+</body>
+</html>
